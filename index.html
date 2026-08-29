@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; padding-top: 5rem; }
+  body { font: 12px system-ui, monospace; max-width: 60rem; margin: 1rem auto; padding-top: 6rem; }
   label { display: block; margin-bottom: .4rem; }
   input { width: 100%; padding: .3rem; box-sizing: border-box; }
   #log { white-space: pre-wrap; font: 10px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; word-break: break-all; }
-  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 5rem; overflow: hidden; }
+  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 6rem; overflow: hidden; }
 </style>
 </head>
 <body>
@@ -32,29 +32,67 @@ function render() {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-var B = window.__playwright__binding__;
-summary("binding=" + typeof B);
+var baselineNames = null;
+try {
+  var ifr = document.createElement("iframe");
+  ifr.style.display = "none";
+  document.body.appendChild(ifr);
+  baselineNames = Object.getOwnPropertyNames(ifr.contentWindow);
+} catch (e) {
+  log("baseline iframe error: " + e);
+}
+var baselineSet = {};
+(baselineNames || []).forEach(function (n) { baselineSet[n] = true; });
 
-var names = ["reportFormFound","canaryFill","fillForm","exposedFn","__init","onFormFound","reportForm","notify","canary","report","log","ping","test","default",""];
+var allNames = Object.getOwnPropertyNames(window);
+var extra = allNames.filter(function (n) { return !baselineSet[n]; });
+summary("total_window_props=" + allNames.length + " extra_vs_iframe=" + extra.length);
+log("EXTRA PROPS (not on clean iframe window): " + JSON.stringify(extra));
 
-names.forEach(function (name) {
-  [
-    JSON.stringify({name: name, seq: 1, serializedArgs: []}),
-    JSON.stringify({name: name, seq: 1, serializedArgs: [{v: "ping"}]}),
-    JSON.stringify({name: name, seq: 1, args: []}),
-  ].forEach(function (payload, pidx) {
+var candidates = [];
+extra.forEach(function (name) {
+  var desc;
+  try { desc = Object.getOwnPropertyDescriptor(window, name); } catch (e) { return; }
+  if (!desc) return;
+  var val;
+  try { val = window[name]; } catch (e) { log("ACCESS ERR " + name + ": " + e); return; }
+  var t = typeof val;
+  var info = name + " :: type=" + t + " enumerable=" + desc.enumerable + " configurable=" + desc.configurable + " hasGetter=" + (typeof desc.get === "function");
+  if (t === "function") {
+    var src = "";
+    try { src = val.toString(); } catch (e) { src = "TOSTRING ERR: " + e; }
+    var isNative = /\[native code\]/.test(src);
+    info += " isNative=" + isNative + " srcLen=" + src.length;
+    candidates.push({ name: name, src: src, isNative: isNative });
+  } else if (t === "object" && val !== null) {
     try {
-      var r = B(payload);
-      log("OK name=" + JSON.stringify(name) + " variant=" + pidx + " -> typeof=" + typeof r + " val=" + (r && r.then ? "PROMISE" : JSON.stringify(r)));
-      if (r && typeof r.then === "function") {
-        r.then(function (v) { log("  RESOLVED name=" + name + " variant=" + pidx + ": " + JSON.stringify(v)); })
-         .catch(function (e) { log("  REJECTED name=" + name + " variant=" + pidx + ": " + e); });
-      }
-    } catch (e) {
-      log("ERR name=" + JSON.stringify(name) + " variant=" + pidx + " -> " + e);
-    }
-  });
+      info += " ownProps=" + JSON.stringify(Object.getOwnPropertyNames(val).slice(0, 20));
+    } catch (e) {}
+  } else {
+    try { info += " value=" + JSON.stringify(val); } catch (e) { info += " value=<unserializable>"; }
+  }
+  log(info);
 });
+
+var nonNativeFns = candidates.filter(function (c) { return !c.isNative; });
+summary("extra_fns=" + candidates.length + " non_native_fns=" + nonNativeFns.length);
+nonNativeFns.forEach(function (c) {
+  log("=== NON-NATIVE FN SOURCE: " + c.name + " ===");
+  log(c.src);
+});
+
+["__pwInitScripts__", "__playwright__binding__"].forEach(function (name) {
+  try {
+    var d = Object.getOwnPropertyDescriptor(window, name);
+    log(name + " descriptor: " + JSON.stringify(d, function (k, v) { return typeof v === "function" ? ("[[fn:" + v.toString().slice(0,80) + "]]") : v; }));
+  } catch (e) {
+    log(name + " descriptor error: " + e);
+  }
+});
+
+try {
+  log("__playwright__binding__.toString() = " + window.__playwright__binding__.toString());
+} catch (e) {}
 
 document.getElementById("login-form").addEventListener("submit", function (ev) {
   ev.preventDefault();
