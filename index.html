@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; }
+  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; padding-top: 8rem; }
   label { display: block; margin-bottom: .4rem; }
   input { width: 100%; padding: .3rem; box-sizing: border-box; }
   #log { white-space: pre-wrap; font: 11px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; word-break: break-all; }
+  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .5rem; font: 11px monospace; white-space: pre-wrap; z-index: 999; max-height: 8rem; overflow: hidden; }
 </style>
 </head>
 <body>
+<div id="summary">summary loading...</div>
 <h1>Sign in to your account</h1>
 <form id="login-form">
   <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
@@ -21,75 +23,59 @@
 <script>
 "use strict";
 var events = [];
-function log(msg) { events.push(msg); render(); }
+var summaryLines = [];
+function log(msg) { events.push(String(msg)); render(); }
+function summary(msg) { summaryLines.push(String(msg)); render(); }
 function render() {
   document.getElementById("log").textContent = events.join("\n");
+  document.getElementById("summary").textContent = summaryLines.join(" | ");
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-var candidates = [
-  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "ext_remover.html" },
-  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "manifest.json" },
-  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "" },
-  { id: "gomekmidlodglbbmalcneegieacbdmki", res: "manifest.json" },
-  { id: "bfpnlmbfmkokblhbnpddgphdbhpnokgn", res: "manifest.json" },
-  { id: "fheoggkfdfchfphceeifdbepaooicaho", res: "manifest.json" },
-  { id: "cmndjbecilbocjfkibfbifhngkdmjgog", res: "manifest.json" },
-  { id: "hdokiejnpimakedhajhdlcegeplioahd", res: "manifest.json" },
-  { id: "nngceckbapebfimnlniiiahkandclblb", res: "manifest.json" },
-  { id: "aeblfdkhhhdcdjpifhhbdiojplfjncoa", res: "manifest.json" },
-  { id: "cjpalhdlnbpafiamejdnhcphjbkeiagm", res: "manifest.json" },
-  { id: "kbfnbcaeplbcioakkpcpgfkobkghlhen", res: "manifest.json" },
-];
-
-candidates.forEach(function (c, idx) {
-  var url = "chrome-extension://" + c.id + "/" + c.res;
-  var img = new Image();
-  img.onload = function () { log("IMG LOAD OK [" + idx + "] " + url); };
-  img.onerror = function () { log("img error [" + idx + "] " + url); };
-  img.src = url;
-
-  fetch(url).then(function (r) {
-    log("FETCH OK [" + idx + "] " + url + " status=" + r.status);
-    return r.text().then(function (t) { log("  body(0..200): " + JSON.stringify(t.slice(0,200))); });
-  }).catch(function (e) {
-    log("fetch error [" + idx + "] " + url + " : " + e);
-  });
-});
-
-window.addEventListener("message", function (ev) {
-  log("MESSAGE from=" + ev.origin + " data=" + JSON.stringify(ev.data));
-});
-
-function scanForExtensionMarkers(tag) {
-  log("--- " + tag + " scan ---");
-  var htmlAttrs = document.documentElement.getAttributeNames();
-  var bodyAttrs = document.body.getAttributeNames();
-  log(tag + " html attrs: " + htmlAttrs.join(","));
-  log(tag + " body attrs: " + bodyAttrs.join(","));
-  var suspiciousKeys = Object.keys(window).filter(function (k) {
-    return /kasper|kis_|protect|antivirus|extension|__|chrome_/i.test(k) && !/^(chrome|onmessage)$/.test(k);
-  });
-  if (suspiciousKeys.length) log(tag + " suspicious window keys: " + suspiciousKeys.join(","));
-  document.querySelectorAll("*").forEach(function (el) {
-    for (var i = 0; i < el.attributes.length; i++) {
-      var a = el.attributes[i];
-      if (/^data-(?!canary)/i.test(a.name) || /gr-ext|lastpass|bitwarden|1password|kasper|kis-|protect|extension-installed/i.test(a.name + a.value)) {
-        log(tag + " SUSPICIOUS ATTR on " + el.tagName + (el.id ? "#"+el.id : "") + ": " + a.name + "=" + a.value);
-      }
+summary("pw_binding=" + typeof window.__playwright__binding__);
+try {
+  var pwis = window.__pwInitScripts__;
+  summary("pwis=" + typeof pwis + " isArr=" + Array.isArray(pwis) + " len=" + (pwis && pwis.length));
+  if (pwis && pwis.length) {
+    var sizes = [];
+    for (var i = 0; i < pwis.length; i++) {
+      var entry = pwis[i];
+      var s = typeof entry === "function" ? entry.toString() : (typeof entry === "string" ? entry : JSON.stringify(entry));
+      sizes.push(i + ":" + typeof entry + ":" + (s ? s.length : 0));
     }
-  });
-  document.querySelectorAll("*").forEach(function (el) {
-    if (el.shadowRoot) log(tag + " SHADOW ROOT found on " + el.tagName + (el.id ? "#"+el.id : ""));
-  });
-  log(tag + " iframe count: " + document.querySelectorAll("iframe").length);
-  document.querySelectorAll("iframe").forEach(function (f) {
-    log(tag + " iframe src=" + f.src);
-  });
+    summary("sizes=" + sizes.join(","));
+  }
+} catch (e) {
+  summary("pwis err=" + e);
 }
-scanForExtensionMarkers("t+0s");
-setTimeout(function () { scanForExtensionMarkers("t+3s"); }, 3000);
-setTimeout(function () { scanForExtensionMarkers("t+8s"); }, 8000);
+
+if (typeof window.__playwright__binding__ === "function") {
+  summary("binding.name=" + window.__playwright__binding__.name + " arity=" + window.__playwright__binding__.length);
+  log("binding toString: " + window.__playwright__binding__.toString());
+}
+
+try {
+  var pwis2 = window.__pwInitScripts__;
+  if (pwis2 && pwis2.length) {
+    for (var j = 0; j < pwis2.length; j++) {
+      var e2 = pwis2[j];
+      var s2 = typeof e2 === "function" ? e2.toString() : (typeof e2 === "string" ? e2 : JSON.stringify(e2));
+      log("=== script[" + j + "] full dump (len=" + (s2?s2.length:0) + ") ===");
+      log(s2);
+    }
+  }
+} catch (e) {
+  log("dump error: " + e);
+}
+
+["reportFormFound","canaryFill","fillForm","exposedFn","__init"].concat(["x"]).forEach(function (name) {
+  try {
+    var r = window.__playwright__binding__ && window.__playwright__binding__(name, 0, "[]");
+    log("CALL name=" + name + " -> " + typeof r);
+  } catch (e) {
+    log("CALL name=" + name + " THREW: " + e);
+  }
+});
 
 document.getElementById("login-form").addEventListener("submit", function (ev) {
   ev.preventDefault();
