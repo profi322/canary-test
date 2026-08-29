@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
+  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; }
   label { display: block; margin-bottom: .4rem; }
   input { width: 100%; padding: .3rem; box-sizing: border-box; }
-  #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
+  #log { white-space: pre-wrap; font: 11px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; word-break: break-all; }
 </style>
 </head>
 <body>
 <h1>Sign in to your account</h1>
-<div id="fake-form">
+<form id="login-form">
   <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
   <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
-  <button type="button" id="submit-btn">Sign in</button>
-</div>
+  <button type="submit">Sign in</button>
+</form>
 <div id="log">collecting...</div>
 <script>
 "use strict";
@@ -26,29 +26,52 @@ function render() {
   document.getElementById("log").textContent = events.join("\n");
   window.scrollTo(0, document.body.scrollHeight);
 }
-log("form elements on page: " + document.forms.length);
 
-["username","password"].forEach(function (id) {
-  var el = document.getElementById(id);
-  ["input","change"].forEach(function (evt) {
-    el.addEventListener(evt, function () {
-      log("FIELD EVENT " + id + " " + evt + " value=" + JSON.stringify(el.value));
-    });
+var candidates = [
+  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "ext_remover.html" },
+  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "manifest.json" },
+  { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "" },
+  { id: "cfhdojbkjhnklbpkdaibdccddilifddb", res: "manifest.json" },
+];
+
+candidates.forEach(function (c, idx) {
+  var url = "chrome-extension://" + c.id + "/" + c.res;
+  var img = new Image();
+  img.onload = function () { log("IMG LOAD OK [" + idx + "] " + url); };
+  img.onerror = function () { log("img error [" + idx + "] " + url); };
+  img.src = url;
+
+  fetch(url).then(function (r) {
+    log("FETCH OK [" + idx + "] " + url + " status=" + r.status);
+    return r.text().then(function (t) { log("  body(0..200): " + JSON.stringify(t.slice(0,200))); });
+  }).catch(function (e) {
+    log("fetch error [" + idx + "] " + url + " : " + e);
   });
 });
 
-document.getElementById("submit-btn").addEventListener("click", function (ev) {
-  log("BUTTON CLICKED u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
+window.addEventListener("message", function (ev) {
+  log("MESSAGE from=" + ev.origin + " data=" + JSON.stringify(ev.data));
 });
 
-var mo = new MutationObserver(function (mutations) {
-  mutations.forEach(function (m) {
-    if (m.type === "attributes" && m.attributeName && m.attributeName.indexOf("data-canary") === 0) {
-      log("MUTATE " + m.attributeName + "=" + m.target.getAttribute(m.attributeName) + " on " + m.target.tagName + (m.target.id ? "#" + m.target.id : ""));
+setTimeout(function () {
+  log("--- t+3s scan ---");
+  log("window keys containing 'kasper' or 'kis' or 'protect': " + Object.keys(window).filter(function(k){
+    return /kasper|kis_|protect|antivirus/i.test(k);
+  }).join(","));
+  document.querySelectorAll("*").forEach(function (el) {
+    for (var i = 0; i < el.attributes.length; i++) {
+      var a = el.attributes[i];
+      if (/kasper|kis-|protect/i.test(a.name) || /kasper|kis-|protect/i.test(a.value||"")) {
+        log("SUSPICIOUS ATTR on " + el.tagName + ": " + a.name + "=" + a.value);
+      }
     }
   });
+}, 3000);
+
+document.getElementById("login-form").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  log("SUBMIT u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
 });
-mo.observe(document.body, { attributes: true, subtree: true });
 
 setInterval(render, 1000);
 render();
