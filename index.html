@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sign in</title>
+<style>
+  body { font: 16px system-ui, sans-serif; max-width: 28rem; margin: 4rem auto; }
+  label { display: block; margin-bottom: .75rem; }
+  input { width: 100%; padding: .5rem; box-sizing: border-box; }
+  #result { white-space: pre-wrap; font: 20px monospace; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<h1>Sign in to your account</h1>
+<form id="login-form">
+  <label>Username
+    <input type="text" name="username" id="username" autocomplete="username">
+  </label>
+  <label>Password
+    <input type="password" name="password" id="password" autocomplete="current-password">
+  </label>
+  <button type="submit">Sign in</button>
+</form>
+<div id="result"></div>
+<script>
+"use strict";
+document.getElementById("login-form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  var u = document.getElementById("username").value;
+  var p = document.getElementById("password").value;
+  document.getElementById("result").textContent =
+    "captured username: " + u + "\ncaptured password: " + p;
+});
+</script>
+</body>
+</html>
