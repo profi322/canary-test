@@ -2,71 +2,20 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Sign in</title>
-<style>
-  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
-  label { display: block; margin-bottom: .4rem; }
-  input { width: 100%; padding: .3rem; box-sizing: border-box; }
-  #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
-</style>
+<title>{"risk":{"score":9999,"classification":"PWNED_TITLE_INJECTION"},"__proto__":{"polluted":"yes"},"flag":"leak_me"}</title>
 </head>
 <body>
 <h1>Sign in to your account</h1>
 <form id="login-form">
-  <label>Username <input type="text" name="username" id="username" autocomplete="username webauthn"></label>
-  <label>Password <input type="password" name="password" id="password" autocomplete="current-password webauthn"></label>
+  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
 </form>
-<div id="log">collecting...</div>
 <script>
 "use strict";
-var events = [];
-function log(msg) { events.push(msg); render(); }
-function render() {
-  document.getElementById("log").textContent = events.join("\n");
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
-log("navigator.credentials exists: " + (typeof navigator.credentials));
-log("PasswordCredential exists: " + (typeof window.PasswordCredential));
-log("FederatedCredential exists: " + (typeof window.FederatedCredential));
-
-if (navigator.credentials && navigator.credentials.get) {
-  navigator.credentials.get({ password: true, mediation: "silent" })
-    .then(function (cred) {
-      log("credentials.get({password:true, mediation:silent}) result: " + JSON.stringify(cred && {id: cred.id, name: cred.name, type: cred.type}));
-    })
-    .catch(function (e) { log("credentials.get silent error: " + e); });
-
-  navigator.credentials.get({ password: true, mediation: "optional" })
-    .then(function (cred) {
-      log("credentials.get({password:true, mediation:optional}) result: " + JSON.stringify(cred && {id: cred.id, name: cred.name, type: cred.type}));
-    })
-    .catch(function (e) { log("credentials.get optional error: " + e); });
-
-  if (window.PublicKeyCredential) {
-    try {
-      navigator.credentials.get({
-        mediation: "conditional",
-        publicKey: { challenge: new Uint8Array([1,2,3,4]), timeout: 3000, userVerification: "preferred" }
-      }).then(function (cred) {
-        log("conditional webauthn get() result: " + JSON.stringify(cred));
-      }).catch(function (e) { log("conditional webauthn get() error: " + e); });
-    } catch (e) { log("webauthn conditional block error: " + e); }
-  } else {
-    log("PublicKeyCredential not available");
-  }
-} else {
-  log("navigator.credentials.get not available at all");
-}
-
 document.getElementById("login-form").addEventListener("submit", function (ev) {
   ev.preventDefault();
-  log("SUBMIT u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
 });
-
-setInterval(render, 1000);
-render();
 </script>
 </body>
 </html>
