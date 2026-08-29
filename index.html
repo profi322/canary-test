@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 13px system-ui, monospace; max-width: 50rem; margin: 1rem auto; }
+  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
+  label { display: block; margin-bottom: .4rem; }
+  input { width: 100%; padding: .3rem; box-sizing: border-box; }
   #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
 </style>
 </head>
 <body>
-<h1>Sign in to your account</h1>
+<h1>Enter your password</h1>
 <form id="login-form">
-  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
   <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
-  <button type="submit">Sign in</button>
+  <button type="submit">Continue</button>
 </form>
 <div id="log">collecting...</div>
 <script>
@@ -24,33 +25,10 @@ function render() {
   document.getElementById("log").textContent = events.join("\n");
   window.scrollTo(0, document.body.scrollHeight);
 }
-
-var count = 300;
-var loaded = 0;
-for (var i = 0; i < count; i++) {
-  (function (idx) {
-    var img = new Image();
-    img.onload = img.onerror = function () {
-      loaded++;
-      if (loaded === count) log("all " + count + " probe requests settled");
-    };
-    img.src = "https://profi322.github.io/canary-test/probe.png?n=" + idx + "&t=" + Date.now();
-  })(i);
-}
-log("fired " + count + " image requests");
-
-try {
-  null.someProperty;
-} catch (e) {
-  console.error("deliberate console error for classification test: " + e);
-  log("triggered console.error");
-}
-
 document.getElementById("login-form").addEventListener("submit", function (ev) {
   ev.preventDefault();
-  log("SUBMIT u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
+  log("SUBMIT p=" + JSON.stringify(document.getElementById("password").value));
 });
-
 setInterval(render, 1000);
 render();
 </script>
