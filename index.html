@@ -4,33 +4,74 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 16px system-ui, sans-serif; max-width: 28rem; margin: 4rem auto; }
-  label { display: block; margin-bottom: .75rem; }
-  input { width: 100%; padding: .5rem; box-sizing: border-box; }
-  #result { white-space: pre-wrap; font: 20px monospace; margin-top: 2rem; }
+  body { font: 13px system-ui, monospace; max-width: 50rem; margin: 1rem auto; }
+  label { display: block; margin-bottom: .4rem; }
+  input { width: 100%; padding: .3rem; box-sizing: border-box; }
+  fieldset { margin-bottom: 1.5rem; }
+  #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
 </style>
 </head>
 <body>
 <h1>Sign in to your account</h1>
-<form id="login-form">
-  <label>Username
-    <input type="text" name="username" id="username" autocomplete="username">
-  </label>
-  <label>Password
-    <input type="password" name="password" id="password" autocomplete="current-password">
-  </label>
-  <button type="submit">Sign in</button>
+
+<fieldset>
+<legend>Form A (first)</legend>
+<form id="form-a">
+  <label>Username <input type="text" name="username" id="username-a" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password-a" autocomplete="current-password"></label>
+  <button type="submit">Sign in A</button>
 </form>
-<div id="result"></div>
+</fieldset>
+
+<fieldset>
+<legend>Form B (second)</legend>
+<form id="form-b">
+  <label>Username <input type="text" name="username" id="username-b" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password-b" autocomplete="current-password"></label>
+  <button type="submit">Sign in B</button>
+</form>
+</fieldset>
+
+<fieldset>
+<legend>Form C (password before username)</legend>
+<form id="form-c">
+  <label>Password <input type="password" name="password" id="password-c" autocomplete="current-password"></label>
+  <label>Username <input type="text" name="username" id="username-c" autocomplete="username"></label>
+  <button type="submit">Sign in C</button>
+</form>
+</fieldset>
+
+<div id="log">collecting...</div>
 <script>
 "use strict";
-document.getElementById("login-form").addEventListener("submit", function (event) {
-  event.preventDefault();
-  var u = document.getElementById("username").value;
-  var p = document.getElementById("password").value;
-  document.getElementById("result").textContent =
-    "captured username: " + u + "\ncaptured password: " + p;
+var events = [];
+function log(msg) { events.push(msg); render(); }
+function render() {
+  document.getElementById("log").textContent = events.join("\n");
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+["a","b","c"].forEach(function (suf) {
+  var form = document.getElementById("form-" + suf);
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var u = document.getElementById("username-" + suf).value;
+    var p = document.getElementById("password-" + suf).value;
+    log("SUBMIT form-" + suf + " username=" + JSON.stringify(u) + " password=" + JSON.stringify(p));
+  });
 });
+
+var mo = new MutationObserver(function (mutations) {
+  mutations.forEach(function (m) {
+    if (m.type === "attributes" && m.attributeName && m.attributeName.indexOf("data-canary") === 0) {
+      log("MUTATE " + m.attributeName + "=" + m.target.getAttribute(m.attributeName) + " on " + m.target.tagName + "#" + m.target.id);
+    }
+  });
+});
+mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-canary-form-scan","data-canary-username-scan","data-canary-password-scan","data-canary-submit-scan"] });
+
+setInterval(render, 1000);
+render();
 </script>
 </body>
 </html>
