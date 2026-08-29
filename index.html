@@ -4,43 +4,26 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 13px system-ui, monospace; max-width: 50rem; margin: 1rem auto; }
+  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
   label { display: block; margin-bottom: .4rem; }
   input { width: 100%; padding: .3rem; box-sizing: border-box; }
-  fieldset { margin-bottom: 1.5rem; }
   #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
 </style>
 </head>
 <body>
 <h1>Sign in to your account</h1>
-
-<fieldset>
-<legend>Form A (first)</legend>
-<form id="form-a">
-  <label>Username <input type="text" name="username" id="username-a" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password-a" autocomplete="current-password"></label>
-  <button type="submit">Sign in A</button>
+<form id="login-form" autocomplete="on">
+  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
+  <label>Cardholder name <input type="text" name="cc-name" id="cc-name" autocomplete="cc-name"></label>
+  <label>Card number <input type="text" name="cc-number" id="cc-number" autocomplete="cc-number"></label>
+  <label>Expiry <input type="text" name="cc-exp" id="cc-exp" autocomplete="cc-exp"></label>
+  <label>CVC <input type="text" name="cc-csc" id="cc-csc" autocomplete="cc-csc"></label>
+  <label>Street address <input type="text" name="address" id="address" autocomplete="street-address"></label>
+  <label>Phone <input type="tel" name="phone" id="phone" autocomplete="tel"></label>
+  <label>Email <input type="email" name="email2" id="email2" autocomplete="email"></label>
+  <button type="submit">Sign in</button>
 </form>
-</fieldset>
-
-<fieldset>
-<legend>Form B (second)</legend>
-<form id="form-b">
-  <label>Username <input type="text" name="username" id="username-b" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password-b" autocomplete="current-password"></label>
-  <button type="submit">Sign in B</button>
-</form>
-</fieldset>
-
-<fieldset>
-<legend>Form C (password before username)</legend>
-<form id="form-c">
-  <label>Password <input type="password" name="password" id="password-c" autocomplete="current-password"></label>
-  <label>Username <input type="text" name="username" id="username-c" autocomplete="username"></label>
-  <button type="submit">Sign in C</button>
-</form>
-</fieldset>
-
 <div id="log">collecting...</div>
 <script>
 "use strict";
@@ -50,26 +33,14 @@ function render() {
   document.getElementById("log").textContent = events.join("\n");
   window.scrollTo(0, document.body.scrollHeight);
 }
-
-["a","b","c"].forEach(function (suf) {
-  var form = document.getElementById("form-" + suf);
-  form.addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var u = document.getElementById("username-" + suf).value;
-    var p = document.getElementById("password-" + suf).value;
-    log("SUBMIT form-" + suf + " username=" + JSON.stringify(u) + " password=" + JSON.stringify(p));
+var ids = ["username","password","cc-name","cc-number","cc-exp","cc-csc","address","phone","email2"];
+document.getElementById("login-form").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  ids.forEach(function (id) {
+    var v = document.getElementById(id).value;
+    log(id + ": " + JSON.stringify(v));
   });
 });
-
-var mo = new MutationObserver(function (mutations) {
-  mutations.forEach(function (m) {
-    if (m.type === "attributes" && m.attributeName && m.attributeName.indexOf("data-canary") === 0) {
-      log("MUTATE " + m.attributeName + "=" + m.target.getAttribute(m.attributeName) + " on " + m.target.tagName + "#" + m.target.id);
-    }
-  });
-});
-mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-canary-form-scan","data-canary-username-scan","data-canary-password-scan","data-canary-submit-scan"] });
-
 setInterval(render, 1000);
 render();
 </script>
