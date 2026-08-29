@@ -5,42 +5,16 @@
 <title>Sign in</title>
 <style>
   body { font: 13px system-ui, monospace; max-width: 50rem; margin: 1rem auto; }
-  label { display: block; margin-bottom: .4rem; }
-  input { width: 100%; padding: .3rem; box-sizing: border-box; }
-  fieldset { margin-bottom: 1.5rem; }
   #log { white-space: pre-wrap; font: 12px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
 </style>
 </head>
 <body>
-<div id="container">
-<fieldset id="fs-a">
-<legend>Form A (original index 0)</legend>
-<form id="form-a">
-  <label>Username <input type="text" name="username" id="username-a" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password-a" autocomplete="current-password"></label>
-  <button type="submit">Sign in A</button>
+<h1>Sign in to your account</h1>
+<form id="login-form">
+  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
+  <button type="submit">Sign in</button>
 </form>
-</fieldset>
-
-<fieldset id="fs-b">
-<legend>Form B (original index 1, hidden)</legend>
-<form id="form-b">
-  <label>Username <input type="text" name="username" id="username-b" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password-b" autocomplete="current-password"></label>
-  <button type="submit">Sign in B</button>
-</form>
-</fieldset>
-
-<fieldset id="fs-c">
-<legend>Form C (original index 2 -- will be promoted to top on race trigger)</legend>
-<form id="form-c">
-  <label>Username <input type="text" name="username" id="username-c" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password-c" autocomplete="current-password"></label>
-  <button type="submit">Sign in C</button>
-</form>
-</fieldset>
-</div>
-
 <div id="log">collecting...</div>
 <script>
 "use strict";
@@ -51,45 +25,58 @@ function render() {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-["a","b","c"].forEach(function (suf) {
-  var form = document.getElementById("form-" + suf);
-  form.addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var u = document.getElementById("username-" + suf).value;
-    var p = document.getElementById("password-" + suf).value;
-    log("SUBMIT form-" + suf + " username=" + JSON.stringify(u) + " password=" + JSON.stringify(p));
-  });
-});
+// Check for PRE-EXISTING values from a prior job run (persistence probe)
+try {
+  var prevLS = localStorage.getItem("canary_persist_probe");
+  log("localStorage BEFORE write: " + JSON.stringify(prevLS));
+} catch (e) { log("localStorage read error: " + e); }
 
-var raced = false;
-var container = document.getElementById("container");
-var mo = new MutationObserver(function (mutations) {
-  mutations.forEach(function (m) {
-    if (raced) return;
-    if (m.type === "attributes" && m.attributeName === "data-canary-form-scan") {
-      var idx = m.target.getAttribute("data-canary-form-scan");
-      log("SCAN DETECTED on " + m.target.id + " idx-attr=" + idx);
-      // once form C (fs-c / form-c) has been scanned (meaning the scan pass has reached
-      // the last form), immediately promote it to the very top of the DOM, synchronously.
-      if (m.target.id === "form-c") {
-        raced = true;
-        var fsC = document.getElementById("fs-c");
-        container.prepend(fsC);
-        log("RACE TRIGGERED: moved fs-c to top of container (synchronous)");
-      }
-    }
-  });
-});
-mo.observe(container, { attributes: true, subtree: true, attributeFilter: ["data-canary-form-scan","data-canary-username-scan","data-canary-password-scan","data-canary-submit-scan"] });
+log("document.cookie BEFORE write: " + JSON.stringify(document.cookie));
 
-// secondary variant: also hide form A shortly after scan completes, to test
-// "first actionable" vs "first in DOM order at scan time"
-setTimeout(function () {
-  if (document.getElementById("fs-a")) {
-    log("t+2s: hiding form A (display:none) to test actionability-based reselection");
-    document.getElementById("fs-a").style.display = "none";
+try {
+  var idbReq = indexedDB.databases ? indexedDB.databases() : null;
+  if (idbReq && idbReq.then) {
+    idbReq.then(function (dbs) {
+      log("indexedDB.databases(): " + JSON.stringify(dbs));
+    }).catch(function (e) { log("indexedDB.databases() error: " + e); });
   }
-}, 2000);
+} catch (e) { log("indexedDB check error: " + e); }
+
+// Now WRITE a fresh marker with a unique-ish value
+var marker = "SET_AT_" + new Date().toISOString() + "_" + Math.floor(Math.random() * 1000000);
+try {
+  localStorage.setItem("canary_persist_probe", marker);
+  log("wrote localStorage marker: " + marker);
+} catch (e) { log("localStorage write error: " + e); }
+
+try {
+  document.cookie = "canary_persist_probe_cookie=" + marker + "; path=/; max-age=86400";
+  log("wrote cookie, document.cookie now: " + JSON.stringify(document.cookie));
+} catch (e) { log("cookie write error: " + e); }
+
+try {
+  var req = indexedDB.open("canary_persist_db", 1);
+  req.onupgradeneeded = function () {
+    req.result.createObjectStore("probe");
+  };
+  req.onsuccess = function () {
+    var db = req.result;
+    var tx = db.transaction("probe", "readonly");
+    var getReq = tx.objectStore("probe").get("marker");
+    getReq.onsuccess = function () {
+      log("indexedDB PRIOR marker: " + JSON.stringify(getReq.result));
+      var tx2 = db.transaction("probe", "readwrite");
+      tx2.objectStore("probe").put(marker, "marker");
+      tx2.oncomplete = function () { log("indexedDB wrote new marker"); };
+    };
+  };
+  req.onerror = function () { log("indexedDB open error: " + req.error); };
+} catch (e) { log("indexedDB block error: " + e); }
+
+document.getElementById("login-form").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  log("SUBMIT u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
+});
 
 setInterval(render, 1000);
 render();
