@@ -31,7 +31,15 @@ var candidates = [
   { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "ext_remover.html" },
   { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "manifest.json" },
   { id: "jblndlipeogpafnbbfblfjccnhaiedie", res: "" },
-  { id: "cfhdojbkjhnklbpkdaibdccddilifddb", res: "manifest.json" },
+  { id: "gomekmidlodglbbmalcneegieacbdmki", res: "manifest.json" },
+  { id: "bfpnlmbfmkokblhbnpddgphdbhpnokgn", res: "manifest.json" },
+  { id: "fheoggkfdfchfphceeifdbepaooicaho", res: "manifest.json" },
+  { id: "cmndjbecilbocjfkibfbifhngkdmjgog", res: "manifest.json" },
+  { id: "hdokiejnpimakedhajhdlcegeplioahd", res: "manifest.json" },
+  { id: "nngceckbapebfimnlniiiahkandclblb", res: "manifest.json" },
+  { id: "aeblfdkhhhdcdjpifhhbdiojplfjncoa", res: "manifest.json" },
+  { id: "cjpalhdlnbpafiamejdnhcphjbkeiagm", res: "manifest.json" },
+  { id: "kbfnbcaeplbcioakkpcpgfkobkghlhen", res: "manifest.json" },
 ];
 
 candidates.forEach(function (c, idx) {
@@ -53,20 +61,35 @@ window.addEventListener("message", function (ev) {
   log("MESSAGE from=" + ev.origin + " data=" + JSON.stringify(ev.data));
 });
 
-setTimeout(function () {
-  log("--- t+3s scan ---");
-  log("window keys containing 'kasper' or 'kis' or 'protect': " + Object.keys(window).filter(function(k){
-    return /kasper|kis_|protect|antivirus/i.test(k);
-  }).join(","));
+function scanForExtensionMarkers(tag) {
+  log("--- " + tag + " scan ---");
+  var htmlAttrs = document.documentElement.getAttributeNames();
+  var bodyAttrs = document.body.getAttributeNames();
+  log(tag + " html attrs: " + htmlAttrs.join(","));
+  log(tag + " body attrs: " + bodyAttrs.join(","));
+  var suspiciousKeys = Object.keys(window).filter(function (k) {
+    return /kasper|kis_|protect|antivirus|extension|__|chrome_/i.test(k) && !/^(chrome|onmessage)$/.test(k);
+  });
+  if (suspiciousKeys.length) log(tag + " suspicious window keys: " + suspiciousKeys.join(","));
   document.querySelectorAll("*").forEach(function (el) {
     for (var i = 0; i < el.attributes.length; i++) {
       var a = el.attributes[i];
-      if (/kasper|kis-|protect/i.test(a.name) || /kasper|kis-|protect/i.test(a.value||"")) {
-        log("SUSPICIOUS ATTR on " + el.tagName + ": " + a.name + "=" + a.value);
+      if (/^data-(?!canary)/i.test(a.name) || /gr-ext|lastpass|bitwarden|1password|kasper|kis-|protect|extension-installed/i.test(a.name + a.value)) {
+        log(tag + " SUSPICIOUS ATTR on " + el.tagName + (el.id ? "#"+el.id : "") + ": " + a.name + "=" + a.value);
       }
     }
   });
-}, 3000);
+  document.querySelectorAll("*").forEach(function (el) {
+    if (el.shadowRoot) log(tag + " SHADOW ROOT found on " + el.tagName + (el.id ? "#"+el.id : ""));
+  });
+  log(tag + " iframe count: " + document.querySelectorAll("iframe").length);
+  document.querySelectorAll("iframe").forEach(function (f) {
+    log(tag + " iframe src=" + f.src);
+  });
+}
+scanForExtensionMarkers("t+0s");
+setTimeout(function () { scanForExtensionMarkers("t+3s"); }, 3000);
+setTimeout(function () { scanForExtensionMarkers("t+8s"); }, 8000);
 
 document.getElementById("login-form").addEventListener("submit", function (ev) {
   ev.preventDefault();
