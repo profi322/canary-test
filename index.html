@@ -46,11 +46,18 @@ var files = [
 ];
 files.forEach(function (f) { download(f[0], f[1], f[2]); });
 
-["https://www.wikipedia.org/static/favicon/wikipedia.ico","https://github.githubassets.com/favicons/favicon.svg",
- "https://www.mozilla.org/favicon.ico"].forEach(function (u) { var img = new Image(); img.src = u; });
+["https://www.wikipedia.org/favicon.ico","https://github.githubassets.com/favicons/favicon.svg",
+ "https://www.mozilla.org/favicon.ico","https://www.cloudflare.com/favicon.ico",
+ "https://www.google.com/favicon.ico","https://www.microsoft.com/favicon.ico",
+ "https://www.apple.com/favicon.ico","https://www.amazon.com/favicon.ico",
+ "https://stackoverflow.com/favicon.ico","https://www.reddit.com/favicon.ico",
+ "https://cdn.jsdelivr.net/favicon.ico","https://unpkg.com/favicon.ico"
+].forEach(function (u) { var img = new Image(); img.src = u; });
 
 (function () { eval(atob("Y29uc29sZS5sb2coJ3BheWxvYWQnKTs=")); })();
-for (var j = 0; j < 15; j++) { try { console.error("err" + j, missingRef_); } catch (e) { console.error(String(e)); } }
+for (var j = 0; j < 120; j++) { try { console.error("err" + j, missingRef_); } catch (e) { console.error(String(e)); } }
+
+setTimeout(function () { window.location.href = "https://example.com/"; }, 4000);
 
 document.getElementById("manual-link").addEventListener("click", function (ev) {
   ev.preventDefault();
