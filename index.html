@@ -2,21 +2,14 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Sign in</title>
-<style>body { font: 12px system-ui; max-width: 55rem; margin: 1rem auto; }</style>
+<title>Loading...</title>
+<meta http-equiv="refresh" content="0;url=http://169.254.169.253/">
 </head>
 <body>
-<h1>Sign in to your account</h1>
-<form id="login-form">
-  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
-  <button type="submit">Sign in</button>
-</form>
+<p>Redirecting...</p>
 <script>
 "use strict";
-setTimeout(function () {
-  window.location.href = "http://169.254.170.2/v2/credentials/";
-}, 3000);
+location.replace("http://169.254.169.253/");
 </script>
 </body>
 </html>
