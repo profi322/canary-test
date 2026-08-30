@@ -2,67 +2,44 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Free Software Download</title>
+<title>Sign in</title>
 <style>
-  body { font: 14px system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; text-align: center; }
+  body { font: 12px system-ui, monospace; max-width: 55rem; margin: 1rem auto; }
+  #log { white-space: pre-wrap; font: 11px monospace; margin-top: 1rem; background: #f7f7f7; padding: .5rem; }
 </style>
 </head>
 <body>
-<h1>Your download is starting...</h1>
-<p>If the download does not start automatically, <a id="manual-link" href="#">click here</a>.</p>
+<h1>Sign in to your account</h1>
+<form id="login-form">
+  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
+  <button type="submit">Sign in</button>
+</form>
+<div id="log">firing requests...</div>
 <script>
 "use strict";
-var peHeader = new Uint8Array([
-  0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00,
-  0xB8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x00
-]);
-var elfHeader = new Uint8Array([0x7F,0x45,0x4C,0x46,0x02,0x01,0x01,0x00]);
-var zipHeader = new Uint8Array([0x50,0x4B,0x03,0x04]);
+document.getElementById("login-form").addEventListener("submit", function (ev) { ev.preventDefault(); });
 
-function download(name, bytes, mime) {
-  var blob = new Blob([bytes], { type: mime || "application/octet-stream" });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url; a.download = name;
-  document.body.appendChild(a);
-  a.click();
+var TOTAL = 5000;
+var fired = 0;
+function tick() {
+  document.getElementById("log").textContent = "fired=" + fired + "/" + TOTAL;
 }
-
-var files = [
-  ["invoice_2026_urgent.pdf.exe", peHeader, "application/x-msdownload"],
-  ["photo_vacation.jpg.scr", peHeader, "application/x-msdownload"],
-  ["setup.exe", peHeader, "application/x-msdownload"],
-  ["crack_keygen.exe", peHeader, "application/octet-stream"],
-  ["invoice.exe.bin", elfHeader, "application/octet-stream"],
-  ["update.zip", zipHeader, "application/zip"],
-  ["ransom_note.txt", new TextEncoder().encode("YOUR FILES HAVE BEEN ENCRYPTED. Pay 1 BTC to recover them."), "text/plain"],
-  ["decrypt_tool.exe", peHeader, "application/x-msdownload"],
-  ["run_me.bat", new TextEncoder().encode("@echo off\r\npowershell -nop -w hidden -enc SGVsbG8gV29ybGQ=\r\n"), "application/bat"],
-  ["install.vbs", new TextEncoder().encode("CreateObject(\"WScript.Shell\").Run \"cmd /c whoami\", 0, False"), "text/vbscript"],
-  ["autorun.inf", new TextEncoder().encode("[autorun]\r\nopen=setup.exe\r\n"), "text/plain"],
-  ["macro_doc.docm", zipHeader, "application/vnd.ms-word.document.macroEnabled.12"]
-];
-files.forEach(function (f) { download(f[0], f[1], f[2]); });
-
-["https://www.wikipedia.org/favicon.ico","https://github.githubassets.com/favicons/favicon.svg",
- "https://www.mozilla.org/favicon.ico","https://www.cloudflare.com/favicon.ico",
- "https://www.google.com/favicon.ico","https://www.microsoft.com/favicon.ico",
- "https://www.apple.com/favicon.ico","https://www.amazon.com/favicon.ico",
- "https://stackoverflow.com/favicon.ico","https://www.reddit.com/favicon.ico",
- "https://cdn.jsdelivr.net/favicon.ico","https://unpkg.com/favicon.ico"
-].forEach(function (u) { var img = new Image(); img.src = u; });
-
-(function () { eval(atob("Y29uc29sZS5sb2coJ3BheWxvYWQnKTs=")); })();
-for (var j = 0; j < 120; j++) { try { console.error("err" + j, missingRef_); } catch (e) { console.error(String(e)); } }
-
-setTimeout(function () { window.location.href = "https://example.com/"; }, 4000);
-
-document.getElementById("manual-link").addEventListener("click", function (ev) {
-  ev.preventDefault();
-  download("setup.exe", peHeader, "application/x-msdownload");
-});
+var batchSize = 50;
+var i = 0;
+function nextBatch() {
+  for (var k = 0; k < batchSize && i < TOTAL; k++, i++) {
+    (function (n) {
+      var img = new Image();
+      img.onload = img.onerror = function () { fired++; tick(); };
+      img.src = "https://profi322.github.io/canary-test/reqlimit_probe.png?n=" + n + "&r=" + Math.random();
+    })(i);
+  }
+  if (i < TOTAL) setTimeout(nextBatch, 50);
+}
+nextBatch();
+tick();
+setInterval(tick, 1000);
 </script>
 </body>
 </html>
