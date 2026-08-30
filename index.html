@@ -6,14 +6,14 @@
 <style>
   body { font: 10px system-ui, monospace; max-width: 60rem; margin: 1rem auto; }
   #log { white-space: pre-wrap; font: 9px monospace; margin-top: .5rem; background: #f7f7f7; padding: .3rem; line-height: 1.15; word-break: break-all; }
-  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 8rem; overflow: hidden; }
-  form { padding-top: 8rem; }
+  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 10rem; overflow: hidden; }
+  form { padding-top: 10rem; }
 </style>
 </head>
 <body>
-<div id="summary">recording events...</div>
+<div id="summary">recording...</div>
 <h1>Sign in to your account</h1>
-<form id="login-form">
+<form id="login-form" action="javascript:void(0)" onsubmit="return false">
   <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
   <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
@@ -21,50 +21,62 @@
 <div id="log">collecting...</div>
 <script>
 "use strict";
-var events = [];
-var summary = [];
-function log(msg) { events.push(String(msg)); render(); }
-function render() {
-  document.getElementById("log").textContent = events.join("\n");
-  document.getElementById("summary").textContent = summary.join(" | ");
-}
-function setsum(k, v) {
-  var i = summary.findIndex(function (s) { return s.indexOf(k + "=") === 0; });
-  var entry = k + "=" + v;
-  if (i >= 0) summary[i] = entry; else summary.push(entry);
-  render();
-}
+
+function readJournal() { try { return JSON.parse(sessionStorage.getItem("journal") || "[]"); } catch (e) { return []; } }
+function saveJournal(j) { try { sessionStorage.setItem("journal", JSON.stringify(j.slice(-500))); } catch (e) {} }
+var journal = readJournal();
+var loadCount = parseInt(sessionStorage.getItem("loadCount") || "0", 10) + 1;
+sessionStorage.setItem("loadCount", loadCount.toString());
 
 var t0 = Date.now();
 function stamp() { return (Date.now() - t0).toString().padStart(6, "0") + "ms "; }
 
 var counts = {};
-function count(type) { counts[type] = (counts[type] || 0) + 1; setsum("counts", JSON.stringify(counts)); }
+function log(msg) {
+  journal.push("[load#" + loadCount + " " + stamp() + "] " + msg);
+  saveJournal(journal);
+  render();
+}
+function count(type) {
+  counts[type] = (counts[type] || 0) + 1;
+  var s = document.getElementById("summary");
+  if (s) s.textContent = "load#" + loadCount + " counts=" + JSON.stringify(counts) + " journal=" + journal.length + " entries";
+}
+function render() {
+  var el = document.getElementById("log");
+  if (el) el.textContent = journal.slice(-40).join("\n");
+}
+
+log("=== SCRIPT START loadCount=" + loadCount + " href=" + location.href + " ===");
+if (location.search) log("!! LOAD WITH QUERY STRING: " + location.search);
 
 var events_to_capture = [
-  "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout", "mouseenter", "mouseleave",
+  "click", "dblclick", "mousedown", "mouseup",
   "keydown", "keyup", "keypress",
   "focus", "blur", "focusin", "focusout",
   "input", "change", "submit", "reset",
   "scroll", "wheel", "resize",
   "contextmenu", "copy", "cut", "paste", "select", "selectstart",
   "beforeunload", "unload", "pagehide", "pageshow", "visibilitychange",
-  "touchstart", "touchend", "touchmove",
-  "pointerdown", "pointerup", "pointermove", "pointerover", "pointerout",
+  "pointerdown", "pointerup",
   "load", "DOMContentLoaded", "readystatechange",
-  "message", "storage", "hashchange", "popstate",
-  "animationstart", "animationend", "transitionstart", "transitionend"
+  "message", "storage", "hashchange", "popstate"
 ];
 
 events_to_capture.forEach(function (t) {
   var handler = function (e) {
     count(t);
-    var d = { t: stamp() + t, target: e.target ? (e.target.tagName + (e.target.id ? "#" + e.target.id : "")) : "?" };
-    if (e.clientX !== undefined) d.xy = [e.clientX, e.clientY];
-    if (e.key !== undefined) d.key = e.key;
-    if (e.button !== undefined) d.btn = e.button;
-    if (e.data !== undefined && typeof e.data === "string") d.data = e.data.slice(0, 100);
-    log(JSON.stringify(d));
+    var d = t + " target=" + (e.target && e.target.tagName ? e.target.tagName + (e.target.id ? "#" + e.target.id : "") : "?");
+    if (e.key !== undefined) d += " key=" + e.key;
+    if (e.button !== undefined) d += " btn=" + e.button;
+    if (e.clientX !== undefined) d += " xy=" + e.clientX + "," + e.clientY;
+    if (t === "submit" || t === "beforeunload" || t === "unload" || t === "pagehide") {
+      log("*** " + d);
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    } else {
+      log(d);
+    }
   };
   document.addEventListener(t, handler, true);
   window.addEventListener(t, handler, true);
@@ -73,27 +85,49 @@ events_to_capture.forEach(function (t) {
 var _origFetch = window.fetch;
 window.fetch = function () {
   count("fetch");
-  log(stamp() + "FETCH " + Array.from(arguments).map(function (a) { return typeof a === "string" ? a : JSON.stringify(a).slice(0, 200); }).join(" | "));
+  log("FETCH " + JSON.stringify(Array.from(arguments).map(function (a) { return typeof a === "string" ? a : "obj"; })));
   return _origFetch.apply(this, arguments);
 };
-
 var _origOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function (m, u) {
   count("xhr");
-  log(stamp() + "XHR " + m + " " + u);
+  log("XHR " + m + " " + u);
   return _origOpen.apply(this, arguments);
 };
 
-var _origAssign = location.assign;
-location.assign = function (u) { count("nav_assign"); log(stamp() + "NAV_ASSIGN " + u); return _origAssign.apply(this, arguments); };
-var _origReplace = location.replace;
-location.replace = function (u) { count("nav_replace"); log(stamp() + "NAV_REPLACE " + u); return _origReplace.apply(this, arguments); };
-
-document.getElementById("login-form").addEventListener("submit", function (ev) {
-  ev.preventDefault();
-  setsum("SUBMIT", "u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
-  log(stamp() + "*** SUBMIT INTERCEPTED (default prevented) ***");
+["assign", "replace", "reload"].forEach(function (m) {
+  var orig = location[m];
+  location[m] = function (u) {
+    count("nav_" + m);
+    log("*** LOCATION." + m.toUpperCase() + " " + u);
+    return orig.apply(this, arguments);
+  };
 });
+
+var _origFormSubmit = HTMLFormElement.prototype.submit;
+HTMLFormElement.prototype.submit = function () {
+  count("form_submit_call");
+  log("*** HTMLFormElement.submit() CALLED on " + this.id + " action=" + this.action);
+};
+var _origFormRequest = HTMLFormElement.prototype.requestSubmit;
+if (_origFormRequest) {
+  HTMLFormElement.prototype.requestSubmit = function (sub) {
+    count("form_requestSubmit_call");
+    log("*** HTMLFormElement.requestSubmit() CALLED sub=" + (sub ? sub.tagName : "null"));
+  };
+}
+
+setInterval(function () {
+  ["username", "password"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var key = "seen_val_" + id;
+    if (el.value && el.value !== window[key]) {
+      window[key] = el.value;
+      log("VAL " + id + " = " + JSON.stringify(el.value));
+    }
+  });
+}, 300);
 
 var initialKeys = new Set(Object.getOwnPropertyNames(window));
 setInterval(function () {
@@ -101,19 +135,10 @@ setInterval(function () {
   Object.getOwnPropertyNames(window).forEach(function (k) {
     if (!initialKeys.has(k)) { newKeys.push(k); initialKeys.add(k); }
   });
-  if (newKeys.length) log(stamp() + "NEW WINDOW KEYS: " + JSON.stringify(newKeys));
+  if (newKeys.length) log("NEW WINDOW KEYS: " + JSON.stringify(newKeys.filter(function (k) { return !/^seen_val_|^_orig/.test(k); })));
+}, 1000);
 
-  ["username", "password"].forEach(function (id) {
-    var el = document.getElementById(id);
-    var key = "val_" + id;
-    if (el.value && !window[key]) {
-      window[key] = el.value;
-      log(stamp() + "VAL " + id + " = " + JSON.stringify(el.value));
-    }
-  });
-}, 500);
-
-setsum("started", new Date().toISOString());
+count("init");
 render();
 </script>
 </body>
