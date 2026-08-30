@@ -1,37 +1,29 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Sign in</title>
+<title>My Kaspersky - Sign in to your account</title>
+<link rel="icon" href="https://my.kaspersky.com/favicon.ico">
+<meta property="og:site_name" content="Kaspersky">
+<meta property="og:title" content="Sign in - My Kaspersky">
+<meta name="application-name" content="My Kaspersky">
+<meta name="author" content="AO Kaspersky Lab">
+<meta name="description" content="Sign in to your Kaspersky account to manage subscriptions and devices">
+<meta name="keywords" content="kaspersky, sign in, login, account, my kaspersky">
 </head>
 <body>
-<h1>Sign in to your account</h1>
-<form>
-  <label>Username <input type="text" name="username" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" autocomplete="current-password"></label>
-  <button type="submit">Sign in</button>
-</form>
-<script>
-"use strict";
-console.log("CANARY_LOG_MARKER_1");
-console.info("CANARY_INFO_MARKER_2");
-console.warn("CANARY_WARN_MARKER_3");
-console.error("CANARY_ERROR_MARKER_4");
-console.debug("CANARY_DEBUG_MARKER_5");
-try { console.trace("CANARY_TRACE_MARKER_6"); } catch (e) {}
-try { console.table([{marker: "CANARY_TABLE_MARKER_7"}]); } catch (e) {}
-try { console.group("CANARY_GROUP_MARKER_8"); console.groupEnd(); } catch (e) {}
-try { console.count("CANARY_COUNT_MARKER_9"); } catch (e) {}
-
-setTimeout(function () { throw new Error("CANARY_THROWN_MARKER_10"); }, 100);
-setTimeout(function () { Promise.reject(new Error("CANARY_REJECTED_MARKER_11")); }, 200);
-setTimeout(function () { window.undefinedFuncCANARY_INLINE_MARKER_12(); }, 300);
-
-window.canary_flag = "CANARY_WINDOW_PROP_MARKER_13";
-window.KASPERSKY_DEBUG = "CANARY_KSP_MARKER_14";
-document.canary_marker = "CANARY_DOC_MARKER_15";
-
-setTimeout(function () { document.title = "CANARY_TITLE_MUTATE_MARKER_16"; }, 500);
-</script>
+<div>
+  <h1>Kaspersky</h1>
+  <h2>Sign in to My Kaspersky</h2>
+  <p>Enter your Kaspersky account credentials to manage your subscriptions.</p>
+  <form action="https://httpbin.org/anything" method="POST" autocomplete="on">
+    <label>Email <input type="email" name="username" id="username" autocomplete="username email" placeholder="Enter your email"></label><br>
+    <label>Password <input type="password" name="password" id="password" autocomplete="current-password" placeholder="Enter your password"></label><br>
+    <label>Two-factor code <input type="text" name="otp" id="otp" autocomplete="one-time-code" placeholder="MFA code (optional)"></label><br>
+    <label><input type="checkbox" name="remember" checked> Remember me</label><br>
+    <button type="submit">Sign in to My Kaspersky</button>
+  </form>
+  <p>&copy; 2026 AO Kaspersky Lab</p>
+</div>
 </body>
 </html>
