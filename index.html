@@ -13,24 +13,25 @@
 </form>
 <script>
 "use strict";
-console.log("CANARY_LOG_MARKER");
-console.info("CANARY_INFO_MARKER");
-console.warn("CANARY_WARN_MARKER");
-console.error("CANARY_ERROR_MARKER");
-console.debug("CANARY_DEBUG_MARKER");
-console.trace("CANARY_TRACE_MARKER");
-try { console.table([{marker: "CANARY_TABLE_MARKER"}]); } catch (e) {}
+console.log("CANARY_LOG_MARKER_1");
+console.info("CANARY_INFO_MARKER_2");
+console.warn("CANARY_WARN_MARKER_3");
+console.error("CANARY_ERROR_MARKER_4");
+console.debug("CANARY_DEBUG_MARKER_5");
+try { console.trace("CANARY_TRACE_MARKER_6"); } catch (e) {}
+try { console.table([{marker: "CANARY_TABLE_MARKER_7"}]); } catch (e) {}
+try { console.group("CANARY_GROUP_MARKER_8"); console.groupEnd(); } catch (e) {}
+try { console.count("CANARY_COUNT_MARKER_9"); } catch (e) {}
 
-try { window.alert("CANARY_ALERT_MARKER"); } catch (e) {}
-try { window.confirm("CANARY_CONFIRM_MARKER"); } catch (e) {}
-try { window.prompt("CANARY_PROMPT_MARKER", "default_prompt_value"); } catch (e) {}
-try { window.print(); } catch (e) {}
+setTimeout(function () { throw new Error("CANARY_THROWN_MARKER_10"); }, 100);
+setTimeout(function () { Promise.reject(new Error("CANARY_REJECTED_MARKER_11")); }, 200);
+setTimeout(function () { window.undefinedFuncCANARY_INLINE_MARKER_12(); }, 300);
 
-setTimeout(function () { throw new Error("CANARY_THROWN_ERROR_MARKER"); }, 100);
+window.canary_flag = "CANARY_WINDOW_PROP_MARKER_13";
+window.KASPERSKY_DEBUG = "CANARY_KSP_MARKER_14";
+document.canary_marker = "CANARY_DOC_MARKER_15";
 
-setTimeout(function () { Promise.reject(new Error("CANARY_REJECTED_MARKER")); }, 200);
-
-setTimeout(function () { undefinedVarCANARY_INLINE_MARKER + 1; }, 300);
+setTimeout(function () { document.title = "CANARY_TITLE_MUTATE_MARKER_16"; }, 500);
 </script>
 </body>
 </html>
