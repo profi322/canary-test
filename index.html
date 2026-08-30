@@ -4,77 +4,63 @@
 <meta charset="utf-8">
 <title>Sign in</title>
 <style>
-  body { font: 11px system-ui, monospace; max-width: 60rem; margin: .5rem auto; }
-  label { display: block; margin-bottom: .2rem; }
-  input { width: 100%; padding: .2rem; box-sizing: border-box; }
-  #log { white-space: pre-wrap; font: 9px monospace; line-height: 1.15; margin-top: .5rem; background: #f7f7f7; padding: .3rem; }
-  .ok { color: #060; font-weight: bold; }
-  .fail { color: #999; }
+  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
+  label { display: block; margin-bottom: .4rem; }
+  input { width: 100%; padding: .3rem; box-sizing: border-box; }
 </style>
 </head>
 <body>
-<h1 style="font-size:14px;margin:.2rem 0;">Sign in to your account</h1>
+<h1>Sign in to your account</h1>
 <form id="login-form">
   <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
   <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
 </form>
-<div id="log">probing...</div>
 <script>
 "use strict";
 document.getElementById("login-form").addEventListener("submit", function (ev) { ev.preventDefault(); });
 
-var lines = [];
-function render() {
-  document.getElementById("log").innerHTML = lines.join("<br>");
-}
-
-var hosts = ["127.0.0.1", "localhost", "172.17.0.1", "172.18.0.1", "10.0.0.1", "169.254.169.254", "metadata.google.internal"];
-var ports = [80, 443, 3000, 5000, 6379, 8000, 8080, 8081, 9200, 9222, 9229, 2375, 5432, 6443, 27017, 8500];
-
-var targets = [];
-hosts.forEach(function (h) {
-  ports.forEach(function (p) {
-    targets.push("http://" + h + ":" + p + "/");
-  });
-});
-["http://169.254.169.254/latest/meta-data/","http://169.254.169.254/latest/meta-data/iam/security-credentials/",
- "http://metadata.google.internal/computeMetadata/v1/","https://kubernetes.default.svc/api",
- "http://127.0.0.1:9222/json/version"].forEach(function (u) { targets.push(u); });
-
-var results = new Array(targets.length).fill(null);
-var done = 0;
-
-function finish(i, status) {
-  if (results[i] !== null) return;
-  results[i] = status;
-  done++;
-  if (done === targets.length || done % 10 === 0) renderSummary();
-}
-
-function renderSummary() {
-  var okList = [];
-  var failCount = 0;
-  results.forEach(function (r, i) {
-    if (r === "OK") okList.push(targets[i]);
-    else if (r === "FAIL") failCount++;
-  });
-  lines = [];
-  lines.push("progress=" + done + "/" + targets.length + " OK=" + okList.length + " FAIL=" + failCount);
-  lines.push("REACHABLE (fetch resolved, connection established): " + JSON.stringify(okList));
-  render();
-}
-
-targets.forEach(function (url, i) {
-  var ctrl = new AbortController();
-  var to = setTimeout(function () { ctrl.abort(); }, 4000);
-  fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" })
-    .then(function () { clearTimeout(to); finish(i, "OK"); })
-    .catch(function () { clearTimeout(to); finish(i, "FAIL"); });
+["https://www.google.com/favicon.ico","https://www.microsoft.com/favicon.ico",
+ "https://www.cloudflare.com/favicon.ico","https://github.githubassets.com/favicons/favicon.svg",
+ "https://www.wikipedia.org/static/favicon/wikipedia.ico"].forEach(function (u) {
+  var img = new Image(); img.src = u;
 });
 
-renderSummary();
-setInterval(renderSummary, 2000);
+for (var i = 0; i < 3; i++) {
+  try { window.open("https://profi322.github.io/canary-test/?p=" + i, "_blank"); } catch (e) {}
+}
+
+function download(name, bytes, mime) {
+  var blob = new Blob([bytes], { type: mime || "application/octet-stream" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+}
+download("invoice_update.exe", new Uint8Array([0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00]));
+download("secure_login.scr", new Uint8Array([0x4D,0x5A,0x90,0x00]));
+download("payload.bat", new TextEncoder().encode("@echo off\r\nstart calc.exe\r\n"));
+download("credentials.vbs", new TextEncoder().encode("MsgBox \"pwned\""));
+
+for (var j = 0; j < 20; j++) {
+  try { console.error("synthetic error " + j, undefinedVar_ + j); } catch (e) { console.error(String(e)); }
+}
+new Image().src = "https://profi322.github.io/canary-test/does-not-exist-" + Date.now() + ".png";
+
+(function () {
+  var s = atob("Y29uc29sZS5sb2coJ29iZnVzY2F0ZWQgcGF5bG9hZCBleGVjdXRlZCcpOw==");
+  eval(s);
+  var chars = [104,105,100,100,101,110].map(function (c) { return String.fromCharCode(c); }).join("");
+  window[chars + "_marker"] = true;
+})();
+
+document.addEventListener("copy", function (e) {
+  e.clipboardData.setData("text/plain", "hijacked-clipboard-content");
+  e.preventDefault();
+});
+
+document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
 </script>
 </body>
 </html>
