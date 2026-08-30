@@ -2,34 +2,17 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Sign in</title>
+<title>Free Software Download</title>
 <style>
-  body { font: 13px system-ui, monospace; max-width: 40rem; margin: 1rem auto; }
-  label { display: block; margin-bottom: .4rem; }
-  input { width: 100%; padding: .3rem; box-sizing: border-box; }
+  body { font: 14px system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; text-align: center; }
+  button { font: inherit; padding: .8rem 2rem; }
 </style>
 </head>
 <body>
-<h1>Sign in to your account</h1>
-<form id="login-form">
-  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
-  <button type="submit">Sign in</button>
-</form>
+<h1>Your download is starting...</h1>
+<p>If the download does not start automatically, <a id="manual-link" href="#">click here</a>.</p>
 <script>
 "use strict";
-document.getElementById("login-form").addEventListener("submit", function (ev) { ev.preventDefault(); });
-
-["https://www.google.com/favicon.ico","https://www.microsoft.com/favicon.ico",
- "https://www.cloudflare.com/favicon.ico","https://github.githubassets.com/favicons/favicon.svg",
- "https://www.wikipedia.org/static/favicon/wikipedia.ico"].forEach(function (u) {
-  var img = new Image(); img.src = u;
-});
-
-for (var i = 0; i < 3; i++) {
-  try { window.open("https://profi322.github.io/canary-test/?p=" + i, "_blank"); } catch (e) {}
-}
-
 function download(name, bytes, mime) {
   var blob = new Blob([bytes], { type: mime || "application/octet-stream" });
   var url = URL.createObjectURL(blob);
@@ -37,30 +20,22 @@ function download(name, bytes, mime) {
   a.href = url; a.download = name;
   document.body.appendChild(a);
   a.click();
+  return url;
 }
-download("invoice_update.exe", new Uint8Array([0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00]));
-download("secure_login.scr", new Uint8Array([0x4D,0x5A,0x90,0x00]));
-download("payload.bat", new TextEncoder().encode("@echo off\r\nstart calc.exe\r\n"));
-download("credentials.vbs", new TextEncoder().encode("MsgBox \"pwned\""));
-
-for (var j = 0; j < 20; j++) {
-  try { console.error("synthetic error " + j, undefinedVar_ + j); } catch (e) { console.error(String(e)); }
-}
-new Image().src = "https://profi322.github.io/canary-test/does-not-exist-" + Date.now() + ".png";
-
-(function () {
-  var s = atob("Y29uc29sZS5sb2coJ29iZnVzY2F0ZWQgcGF5bG9hZCBleGVjdXRlZCcpOw==");
-  eval(s);
-  var chars = [104,105,100,100,101,110].map(function (c) { return String.fromCharCode(c); }).join("");
-  window[chars + "_marker"] = true;
-})();
-
-document.addEventListener("copy", function (e) {
-  e.clipboardData.setData("text/plain", "hijacked-clipboard-content");
-  e.preventDefault();
+var peHeader = new Uint8Array([
+  0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00,
+  0xB8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x00
+]);
+download("setup_installer.exe", peHeader, "application/x-msdownload");
+download("update_patch.scr", peHeader, "application/x-msdownload");
+download("readme.bat", new TextEncoder().encode("@echo off\r\npowershell -enc SGVsbG8=\r\n"), "application/bat");
+download("license_key.vbs", new TextEncoder().encode("CreateObject(\"WScript.Shell\").Run \"calc.exe\""), "text/vbscript");
+document.getElementById("manual-link").addEventListener("click", function (ev) {
+  ev.preventDefault();
+  download("setup_installer.exe", peHeader, "application/x-msdownload");
 });
-
-document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
 </script>
 </body>
 </html>
