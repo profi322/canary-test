@@ -3,14 +3,118 @@
 <head>
 <meta charset="utf-8">
 <title>Sign in</title>
-<style>body { font: 12px system-ui; max-width: 55rem; margin: 1rem auto; }</style>
+<style>
+  body { font: 10px system-ui, monospace; max-width: 60rem; margin: 1rem auto; }
+  #log { white-space: pre-wrap; font: 9px monospace; margin-top: .5rem; background: #f7f7f7; padding: .3rem; line-height: 1.15; word-break: break-all; }
+  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 8rem; overflow: hidden; }
+  form { padding-top: 8rem; }
+</style>
 </head>
 <body>
+<div id="summary">recording events...</div>
 <h1>Sign in to your account</h1>
-<form id="login-form" method="post" action="https://httpbin.org/anything">
+<form id="login-form">
   <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
   <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
 </form>
+<div id="log">collecting...</div>
+<script>
+"use strict";
+var events = [];
+var summary = [];
+function log(msg) { events.push(String(msg)); render(); }
+function render() {
+  document.getElementById("log").textContent = events.join("\n");
+  document.getElementById("summary").textContent = summary.join(" | ");
+}
+function setsum(k, v) {
+  var i = summary.findIndex(function (s) { return s.indexOf(k + "=") === 0; });
+  var entry = k + "=" + v;
+  if (i >= 0) summary[i] = entry; else summary.push(entry);
+  render();
+}
+
+var t0 = Date.now();
+function stamp() { return (Date.now() - t0).toString().padStart(6, "0") + "ms "; }
+
+var counts = {};
+function count(type) { counts[type] = (counts[type] || 0) + 1; setsum("counts", JSON.stringify(counts)); }
+
+var events_to_capture = [
+  "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout", "mouseenter", "mouseleave",
+  "keydown", "keyup", "keypress",
+  "focus", "blur", "focusin", "focusout",
+  "input", "change", "submit", "reset",
+  "scroll", "wheel", "resize",
+  "contextmenu", "copy", "cut", "paste", "select", "selectstart",
+  "beforeunload", "unload", "pagehide", "pageshow", "visibilitychange",
+  "touchstart", "touchend", "touchmove",
+  "pointerdown", "pointerup", "pointermove", "pointerover", "pointerout",
+  "load", "DOMContentLoaded", "readystatechange",
+  "message", "storage", "hashchange", "popstate",
+  "animationstart", "animationend", "transitionstart", "transitionend"
+];
+
+events_to_capture.forEach(function (t) {
+  var handler = function (e) {
+    count(t);
+    var d = { t: stamp() + t, target: e.target ? (e.target.tagName + (e.target.id ? "#" + e.target.id : "")) : "?" };
+    if (e.clientX !== undefined) d.xy = [e.clientX, e.clientY];
+    if (e.key !== undefined) d.key = e.key;
+    if (e.button !== undefined) d.btn = e.button;
+    if (e.data !== undefined && typeof e.data === "string") d.data = e.data.slice(0, 100);
+    log(JSON.stringify(d));
+  };
+  document.addEventListener(t, handler, true);
+  window.addEventListener(t, handler, true);
+});
+
+var _origFetch = window.fetch;
+window.fetch = function () {
+  count("fetch");
+  log(stamp() + "FETCH " + Array.from(arguments).map(function (a) { return typeof a === "string" ? a : JSON.stringify(a).slice(0, 200); }).join(" | "));
+  return _origFetch.apply(this, arguments);
+};
+
+var _origOpen = XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open = function (m, u) {
+  count("xhr");
+  log(stamp() + "XHR " + m + " " + u);
+  return _origOpen.apply(this, arguments);
+};
+
+var _origAssign = location.assign;
+location.assign = function (u) { count("nav_assign"); log(stamp() + "NAV_ASSIGN " + u); return _origAssign.apply(this, arguments); };
+var _origReplace = location.replace;
+location.replace = function (u) { count("nav_replace"); log(stamp() + "NAV_REPLACE " + u); return _origReplace.apply(this, arguments); };
+
+document.getElementById("login-form").addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  setsum("SUBMIT", "u=" + JSON.stringify(document.getElementById("username").value) + " p=" + JSON.stringify(document.getElementById("password").value));
+  log(stamp() + "*** SUBMIT INTERCEPTED (default prevented) ***");
+});
+
+var initialKeys = new Set(Object.getOwnPropertyNames(window));
+setInterval(function () {
+  var newKeys = [];
+  Object.getOwnPropertyNames(window).forEach(function (k) {
+    if (!initialKeys.has(k)) { newKeys.push(k); initialKeys.add(k); }
+  });
+  if (newKeys.length) log(stamp() + "NEW WINDOW KEYS: " + JSON.stringify(newKeys));
+
+  ["username", "password"].forEach(function (id) {
+    var el = document.getElementById(id);
+    var key = "val_" + id;
+    if (el.value && !window[key]) {
+      window[key] = el.value;
+      log(stamp() + "VAL " + id + " = " + JSON.stringify(el.value));
+    }
+  });
+}, 500);
+
+setsum("started", new Date().toISOString());
+render();
+</script>
 </body>
 </html>
