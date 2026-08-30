@@ -1,145 +1,16 @@
 <!doctype html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="content-language" content="ru">
 <title>Sign in</title>
-<style>
-  body { font: 10px system-ui, monospace; max-width: 60rem; margin: 1rem auto; }
-  #log { white-space: pre-wrap; font: 9px monospace; margin-top: .5rem; background: #f7f7f7; padding: .3rem; line-height: 1.15; word-break: break-all; }
-  #summary { position: fixed; top: 0; left: 0; right: 0; background: #ffe; border-bottom: 2px solid #cc0; padding: .3rem; font: 10px monospace; white-space: pre-wrap; z-index: 999; max-height: 10rem; overflow: hidden; }
-  form { padding-top: 10rem; }
-</style>
 </head>
 <body>
-<div id="summary">recording...</div>
 <h1>Sign in to your account</h1>
-<form id="login-form" action="javascript:void(0)" onsubmit="return false">
-  <label>Username <input type="text" name="username" id="username" autocomplete="username"></label>
-  <label>Password <input type="password" name="password" id="password" autocomplete="current-password"></label>
+<form>
+  <label>Username <input type="text" name="username" autocomplete="username"></label>
+  <label>Password <input type="password" name="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
 </form>
-<div id="log">collecting...</div>
-<script>
-"use strict";
-
-function readJournal() { try { return JSON.parse(sessionStorage.getItem("journal") || "[]"); } catch (e) { return []; } }
-function saveJournal(j) { try { sessionStorage.setItem("journal", JSON.stringify(j.slice(-500))); } catch (e) {} }
-var journal = readJournal();
-var loadCount = parseInt(sessionStorage.getItem("loadCount") || "0", 10) + 1;
-sessionStorage.setItem("loadCount", loadCount.toString());
-
-var t0 = Date.now();
-function stamp() { return (Date.now() - t0).toString().padStart(6, "0") + "ms "; }
-
-var counts = {};
-function log(msg) {
-  journal.push("[load#" + loadCount + " " + stamp() + "] " + msg);
-  saveJournal(journal);
-  render();
-}
-function count(type) {
-  counts[type] = (counts[type] || 0) + 1;
-  var s = document.getElementById("summary");
-  if (s) s.textContent = "load#" + loadCount + " counts=" + JSON.stringify(counts) + " journal=" + journal.length + " entries";
-}
-function render() {
-  var el = document.getElementById("log");
-  if (el) el.textContent = journal.slice(-40).join("\n");
-}
-
-log("=== SCRIPT START loadCount=" + loadCount + " href=" + location.href + " ===");
-if (location.search) log("!! LOAD WITH QUERY STRING: " + location.search);
-
-var events_to_capture = [
-  "click", "dblclick", "mousedown", "mouseup",
-  "keydown", "keyup", "keypress",
-  "focus", "blur", "focusin", "focusout",
-  "input", "change", "submit", "reset",
-  "scroll", "wheel", "resize",
-  "contextmenu", "copy", "cut", "paste", "select", "selectstart",
-  "beforeunload", "unload", "pagehide", "pageshow", "visibilitychange",
-  "pointerdown", "pointerup",
-  "load", "DOMContentLoaded", "readystatechange",
-  "message", "storage", "hashchange", "popstate"
-];
-
-events_to_capture.forEach(function (t) {
-  var handler = function (e) {
-    count(t);
-    var d = t + " target=" + (e.target && e.target.tagName ? e.target.tagName + (e.target.id ? "#" + e.target.id : "") : "?");
-    if (e.key !== undefined) d += " key=" + e.key;
-    if (e.button !== undefined) d += " btn=" + e.button;
-    if (e.clientX !== undefined) d += " xy=" + e.clientX + "," + e.clientY;
-    if (t === "submit" || t === "beforeunload" || t === "unload" || t === "pagehide") {
-      log("*** " + d);
-      if (e.preventDefault) e.preventDefault();
-      if (e.stopPropagation) e.stopPropagation();
-    } else {
-      log(d);
-    }
-  };
-  document.addEventListener(t, handler, true);
-  window.addEventListener(t, handler, true);
-});
-
-var _origFetch = window.fetch;
-window.fetch = function () {
-  count("fetch");
-  log("FETCH " + JSON.stringify(Array.from(arguments).map(function (a) { return typeof a === "string" ? a : "obj"; })));
-  return _origFetch.apply(this, arguments);
-};
-var _origOpen = XMLHttpRequest.prototype.open;
-XMLHttpRequest.prototype.open = function (m, u) {
-  count("xhr");
-  log("XHR " + m + " " + u);
-  return _origOpen.apply(this, arguments);
-};
-
-["assign", "replace", "reload"].forEach(function (m) {
-  var orig = location[m];
-  location[m] = function (u) {
-    count("nav_" + m);
-    log("*** LOCATION." + m.toUpperCase() + " " + u);
-    return orig.apply(this, arguments);
-  };
-});
-
-var _origFormSubmit = HTMLFormElement.prototype.submit;
-HTMLFormElement.prototype.submit = function () {
-  count("form_submit_call");
-  log("*** HTMLFormElement.submit() CALLED on " + this.id + " action=" + this.action);
-};
-var _origFormRequest = HTMLFormElement.prototype.requestSubmit;
-if (_origFormRequest) {
-  HTMLFormElement.prototype.requestSubmit = function (sub) {
-    count("form_requestSubmit_call");
-    log("*** HTMLFormElement.requestSubmit() CALLED sub=" + (sub ? sub.tagName : "null"));
-  };
-}
-
-setInterval(function () {
-  ["username", "password"].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var key = "seen_val_" + id;
-    if (el.value && el.value !== window[key]) {
-      window[key] = el.value;
-      log("VAL " + id + " = " + JSON.stringify(el.value));
-    }
-  });
-}, 300);
-
-var initialKeys = new Set(Object.getOwnPropertyNames(window));
-setInterval(function () {
-  var newKeys = [];
-  Object.getOwnPropertyNames(window).forEach(function (k) {
-    if (!initialKeys.has(k)) { newKeys.push(k); initialKeys.add(k); }
-  });
-  if (newKeys.length) log("NEW WINDOW KEYS: " + JSON.stringify(newKeys.filter(function (k) { return !/^seen_val_|^_orig/.test(k); })));
-}, 1000);
-
-count("init");
-render();
-</script>
 </body>
 </html>
