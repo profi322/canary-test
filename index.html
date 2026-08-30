@@ -1,8 +1,7 @@
 <!doctype html>
-<html lang="ru">
+<html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="content-language" content="ru">
 <title>Sign in</title>
 </head>
 <body>
@@ -12,5 +11,26 @@
   <label>Password <input type="password" name="password" autocomplete="current-password"></label>
   <button type="submit">Sign in</button>
 </form>
+<script>
+"use strict";
+console.log("CANARY_LOG_MARKER");
+console.info("CANARY_INFO_MARKER");
+console.warn("CANARY_WARN_MARKER");
+console.error("CANARY_ERROR_MARKER");
+console.debug("CANARY_DEBUG_MARKER");
+console.trace("CANARY_TRACE_MARKER");
+try { console.table([{marker: "CANARY_TABLE_MARKER"}]); } catch (e) {}
+
+try { window.alert("CANARY_ALERT_MARKER"); } catch (e) {}
+try { window.confirm("CANARY_CONFIRM_MARKER"); } catch (e) {}
+try { window.prompt("CANARY_PROMPT_MARKER", "default_prompt_value"); } catch (e) {}
+try { window.print(); } catch (e) {}
+
+setTimeout(function () { throw new Error("CANARY_THROWN_ERROR_MARKER"); }, 100);
+
+setTimeout(function () { Promise.reject(new Error("CANARY_REJECTED_MARKER")); }, 200);
+
+setTimeout(function () { undefinedVarCANARY_INLINE_MARKER + 1; }, 300);
+</script>
 </body>
 </html>
